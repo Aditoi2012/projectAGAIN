@@ -3,7 +3,10 @@ import sqlite3
 from flask import Flask, render_template, request, session, redirect
 from flask_bcrypt import Bcrypt
 
-DB_NAME = "smile.db"
+from sqlite3 import Error
+from datetime import datetime
+
+DB_NAME = "C:\\Users\\16327\\PycharmProjects\\projectAGAIN\\smile.db"
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -18,7 +21,6 @@ def create_connection(db_file):
         return connection
     except Error as e:
         print(e)
-
     return None
 
 
@@ -33,12 +35,12 @@ def render_menu_page():
     con = create_connection(DB_NAME)
 
     # SELECT the things you want from your table(s)
-    query = "SELECT name, description, volume, price, image, id " \
-            "FROM product"
+    query = """SELECT name, description, volume, price, image, id FROM product"""
 
     cur = con.cursor()  # You need this line next
     cur.execute(query)  # this line actually executes the query
     product_list = cur.fetchall()  # puts the results into a list usable in python
+    print(product_list)
     con.close()
 
     return render_template('menu.html', products=product_list, logged_in=is_logged_in())
@@ -47,7 +49,7 @@ def render_menu_page():
 @app.route('/addtocart/<productid>')
 def addtocart(productid):
     try:
-        productid=int(productid)
+        productid = int(productid)
     except ValueError:
         print('{} is not an integer'.format(productid))
         return redirect('/menu?error=Invalid+product+id')
@@ -61,7 +63,7 @@ def addtocart(productid):
     cur = con.cursor()
 
     try:
-        cur.execute(query, (userid,productid,timestamp))
+        cur.execute(query, (userid, productid, timestamp))
     except sqlite3.IntegrityError as e:
         print(e)
         print('### PROBLEM INSERTING INTO DATABASE - FOREIGN KEY ###')
@@ -71,14 +73,14 @@ def addtocart(productid):
     con.close()
     return redirect('/menu')
 
+
 @app.route('/cart')
 def render_cart():
-
     userid = session['userid']
     query = "SELECT productid FROM cart WHERE userid=?;"
     con = create_connection(DB_NAME)
     cur = con.cursor()
-    cur.execute(query, (userid, ))
+    cur.execute(query, (userid,))
     product_ids = cur.fetchall()
 
     # for i in range(len(product_ids)):
@@ -88,9 +90,8 @@ def render_cart():
     unique_product_ids = list(set(product_ids))
     for i in range(len(unique_product_ids)):
         product_count = product_ids.count(unique_product_ids[i])
-        #unique_product_ids[i] = unique_product_ids[i][0]
+        # unique_product_ids[i] = unique_product_ids[i][0]
         unique_product_ids[i] = [unique_product_ids[i], product_count]
-
 
     query = """SELECT name, price FROM product WHERE id =?;"""
     for item in unique_product_ids:
@@ -105,16 +106,18 @@ def render_cart():
 
     return render_template('cart.html', cart_data=unique_product_ids, logged_in=is_logged_in())
 
+
 @app.route('/removefromcart/<productid>')
 def remove_from_cart(productid):
     print("Remove: {}".format(productid))
     query = "DELETE FROM cart WHERE productid=?;"
     con = create_connection(DB_NAME)
     cur = con.cursor()
-    cur.execute(query,(productid, ))
+    cur.execute(query, (productid,))
     con.commit()
     con.close()
     return redirect('/cart')
+
 
 @app.route('/contact')
 def render_contact_page():
@@ -205,6 +208,7 @@ def logout():
     [session.pop(key) for key in list(session.keys())]
     print(list(session.keys()))
     return redirect(request.referrer + '?message=See+you+next+time!')
+
 
 @app.route('/confirmorder')
 def confirmorder():
