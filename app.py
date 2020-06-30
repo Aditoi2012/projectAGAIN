@@ -6,7 +6,7 @@ from flask_bcrypt import Bcrypt
 from sqlite3 import Error
 from datetime import datetime
 
-DB_NAME = "C:\\Users\\16327\\PycharmProjects\\projectAGAIN\\smile.db"
+DB_NAME = "smile.db"
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -40,7 +40,6 @@ def render_menu_page():
     cur = con.cursor()  # You need this line next
     cur.execute(query)  # this line actually executes the query
     product_list = cur.fetchall()  # puts the results into a list usable in python
-    print(product_list)
     con.close()
 
     return render_template('menu.html', products=product_list, logged_in=is_logged_in())
@@ -56,7 +55,7 @@ def addtocart(productid):
 
     userid = session['userid']
     timestamp = datetime.now()
-    print('Add {} to cart'.format(userid, productid), timestamp)
+    print("User {} would like to add {} to cart at {}".format(userid, productid,timestamp))
 
     query = "INSERT INTO cart(id,userid,productid, timestamp) VALUES(NULL,?,?,?)"
     con = create_connection(DB_NAME)
@@ -81,29 +80,29 @@ def render_cart():
     con = create_connection(DB_NAME)
     cur = con.cursor()
     cur.execute(query, (userid,))
+    print(userid)
     product_ids = cur.fetchall()
+    print(product_ids)
 
     # for i in range(len(product_ids)):
     #     product_ids[i] = product_ids[i][0]
     # print(product_ids)
 
     unique_product_ids = list(set(product_ids))
+    print(unique_product_ids)
     for i in range(len(unique_product_ids)):
         product_count = product_ids.count(unique_product_ids[i])
-        # unique_product_ids[i] = unique_product_ids[i][0]
         unique_product_ids[i] = [unique_product_ids[i], product_count]
+    print(unique_product_ids)
 
     query = """SELECT name, price FROM product WHERE id =?;"""
     for item in unique_product_ids:
         print(item[0])
         cur.execute(query, (item[0]))
         item_details = cur.fetchall()
-        print(item_details)
         item.append(item_details[0][0])
         item.append(item_details[0][1])
     con.close()
-    print(unique_product_ids)
-
     return render_template('cart.html', cart_data=unique_product_ids, logged_in=is_logged_in())
 
 
